@@ -1,0 +1,116 @@
+type postId = text;
+type UpdateCallsAggregatedData = vec nat64;
+type NumericEntity = 
+ record {
+   avg: nat64;
+   first: nat64;
+   last: nat64;
+   max: nat64;
+   min: nat64;
+ };
+type Nanos = nat64;
+type MetricsGranularity = 
+ variant {
+   daily;
+   hourly;
+ };
+type LogMessagesData = 
+ record {
+   message: text;
+   timeNanos: Nanos;
+ };
+type HourlyMetricsData = 
+ record {
+   canisterCycles: CanisterCyclesAggregatedData;
+   canisterHeapMemorySize: CanisterHeapMemoryAggregatedData;
+   canisterMemorySize: CanisterMemoryAggregatedData;
+   timeMillis: int;
+   updateCalls: UpdateCallsAggregatedData;
+ };
+type GetMetricsParameters = 
+ record {
+   dateFromMillis: nat;
+   dateToMillis: nat;
+   granularity: MetricsGranularity;
+ };
+type GetLogMessagesParameters = 
+ record {
+   count: nat32;
+   filter: opt GetLogMessagesFilter;
+   fromTimeNanos: opt Nanos;
+ };
+type GetLogMessagesFilter = 
+ record {
+   analyzeCount: nat32;
+   messageContains: opt text;
+   messageRegex: opt text;
+ };
+type GetLatestLogMessagesParameters = 
+ record {
+   count: nat32;
+   filter: opt GetLogMessagesFilter;
+   upToTimeNanos: opt Nanos;
+ };
+type DailyMetricsData = 
+ record {
+   canisterCycles: NumericEntity;
+   canisterHeapMemorySize: NumericEntity;
+   canisterMemorySize: NumericEntity;
+   timeMillis: int;
+   updateCalls: nat64;
+ };
+type ChunkRecord = 
+ record {
+   chunkData: text;
+   chunkId: nat32;
+   pid: postId;
+ };
+type CanisterMetricsData = 
+ variant {
+   daily: vec DailyMetricsData;
+   hourly: vec HourlyMetricsData;
+ };
+type CanisterMetrics = record {data: CanisterMetricsData;};
+type CanisterMemoryAggregatedData = vec nat64;
+type CanisterLogResponse = 
+ variant {
+   messages: CanisterLogMessages;
+   messagesInfo: CanisterLogMessagesInfo;
+ };
+type CanisterLogRequest = 
+ variant {
+   getLatestMessages: GetLatestLogMessagesParameters;
+   getMessages: GetLogMessagesParameters;
+   getMessagesInfo;
+ };
+type CanisterLogMessagesInfo = 
+ record {
+   count: nat32;
+   features: vec opt CanisterLogFeature;
+   firstTimeNanos: opt Nanos;
+   lastTimeNanos: opt Nanos;
+ };
+type CanisterLogMessages = 
+ record {
+   data: vec LogMessagesData;
+   lastAnalyzedMessageTimeNanos: opt Nanos;
+ };
+type CanisterLogFeature = 
+ variant {
+   filterMessageByContains;
+   filterMessageByRegex;
+ };
+type CanisterHeapMemoryAggregatedData = vec nat64;
+type CanisterCyclesAggregatedData = vec nat64;
+service : {
+  add_controlling_principal: (principal) -> (vec principal);
+  clearDB: () -> () oneway;
+  collectCanisterMetrics: () -> ();
+  cycleBalance: () -> (nat) query;
+  getCanisterLog: (opt CanisterLogRequest) -> (opt CanisterLogResponse) query;
+  getCanisterMetrics: (GetMetricsParameters) -> (opt CanisterMetrics) query;
+  getVideoChunk: (postId, nat32) -> (text) query;
+  putVideoChunk: (vec ChunkRecord) -> ();
+  view_controlling_principals: () -> (vec principal) query;
+  wallet_receive: () -> (nat);
+}
